@@ -35,31 +35,49 @@ const ImportModal = ({ isOpen, onClose, onImportComplete }: ImportModalProps) =>
             return new Date().toISOString();
         }
 
-        // Try parsing the date
-        const parsed = new Date(dateString);
+        // Clean the date string
+        const cleanedDate = dateString.trim();
 
-        // Check if the date is valid
+        // Try to detect DD/MM/YYYY or DD-MM-YYYY format first (common in Excel)
+        const ddmmyyyyPattern = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+        const match = cleanedDate.match(ddmmyyyyPattern);
+
+        if (match) {
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const year = parseInt(match[3], 10);
+
+            // Check if it's likely DD/MM/YYYY (day > 12 or month <= 12)
+            // If day > 12, it must be DD/MM/YYYY
+            // If day <= 12 and month <= 12, assume DD/MM/YYYY for consistency
+            if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+                // Create date as YYYY-MM-DD (ISO format)
+                const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const parsed = new Date(isoDate);
+
+                if (!isNaN(parsed.getTime())) {
+                    return parsed.toISOString();
+                }
+            }
+        }
+
+        // Try ISO format (YYYY-MM-DD)
+        const isoPattern = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
+        const isoMatch = cleanedDate.match(isoPattern);
+        if (isoMatch) {
+            const parsed = new Date(cleanedDate);
+            if (!isNaN(parsed.getTime())) {
+                return parsed.toISOString();
+            }
+        }
+
+        // Try standard Date parsing as last resort
+        const parsed = new Date(cleanedDate);
         if (!isNaN(parsed.getTime())) {
             return parsed.toISOString();
         }
 
-        // Try alternative formats (DD/MM/YYYY or MM/DD/YYYY)
-        const parts = dateString.split(/[-/]/);
-        if (parts.length === 3) {
-            // Try YYYY-MM-DD
-            const date1 = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
-            if (!isNaN(date1.getTime())) {
-                return date1.toISOString();
-            }
-
-            // Try MM/DD/YYYY
-            const date2 = new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
-            if (!isNaN(date2.getTime())) {
-                return date2.toISOString();
-            }
-        }
-
-        // Fallback to current date if parsing fails
+        // Fallback to current date if all parsing fails
         console.warn(`Could not parse date: ${dateString}, using current date`);
         return new Date().toISOString();
     };
