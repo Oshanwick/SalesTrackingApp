@@ -210,7 +210,7 @@ const ImportModal = ({ isOpen, onClose, onImportComplete }: ImportModalProps) =>
                                                 <td className="px-4 py-2">{item.customerName}</td>
                                                 <td className="px-4 py-2">{item.type}</td>
                                                 <td className="px-4 py-2">{item.assetName}</td>
-                                                <td className="px-4 py-2">${item.price.toFixed(2)}</td>
+                                                <td className="px-4 py-2">Rs {item.price.toFixed(2)}</td>
                                             </tr>
                                         ))}
                                     </tbody>

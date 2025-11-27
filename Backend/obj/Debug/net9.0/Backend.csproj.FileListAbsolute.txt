@@ -121,3 +121,4 @@ D:\Antigravity\Antigravity project\Envato\SalesTrackingApp\Backend\obj\Debug\net
 D:\Antigravity\Antigravity project\Envato\SalesTrackingApp\Backend\obj\Debug\net9.0\ref\Backend.dll
 D:\Antigravity\Antigravity project\Envato\SalesTrackingApp\Backend\bin\Debug\net9.0\Npgsql.dll
 D:\Antigravity\Antigravity project\Envato\SalesTrackingApp\Backend\bin\Debug\net9.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+D:\Antigravity\Antigravity project\Envato\SalesTrackingApp\Backend\obj\Debug\net9.0\Backend.sourcelink.json

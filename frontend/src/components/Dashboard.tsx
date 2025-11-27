@@ -163,7 +163,7 @@ const Dashboard: FC = () => {
                                     Total Revenue
                                 </p>
                                 <p className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
-                                    ${totalRevenue.toFixed(2)}
+                                    Rs {totalRevenue.toFixed(2)}
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-2xl shadow-lg">
@@ -316,7 +316,7 @@ const Dashboard: FC = () => {
                                                 )}
                                             </td>
                                             <td className="table-cell font-bold text-green-600">
-                                                ${sale.price.toFixed(2)}
+                                                Rs {sale.price.toFixed(2)}
                                             </td>
                                             <td className="table-cell">
                                                 <div className="flex gap-2">
