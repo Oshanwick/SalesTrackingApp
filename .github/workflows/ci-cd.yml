@@ -130,7 +130,7 @@ jobs:
           docker build -t salestracking-backend:latest ./Backend
           
           echo "Building frontend image..."
-          docker build -t salestracking-frontend:latest ./frontend
+          docker build --build-arg VITE_API_BASE_URL=/api -t salestracking-frontend:latest ./frontend
       
       - name: Stop existing containers
         run: |
