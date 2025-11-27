@@ -112,14 +112,18 @@ Quick deployment:
 
 The project includes a GitHub Actions workflow that automatically:
 - Runs tests on push/PR
-- Builds multi-architecture Docker images (AMD64 + ARM64)
-- Pushes images to Docker Hub
-- Deploys to Raspberry Pi on push to main branch
+- Builds Docker images locally on Raspberry Pi (ARM64)
+- Deploys to Raspberry Pi using self-hosted runner
+- No Docker Hub required (images built and stored locally)
 
-See [Deployment Guide](./docs/DEPLOYMENT.md#automated-cicd-deployment) for setup instructions.
+**Quick Setup:**
+1. Install self-hosted runner on Raspberry Pi ([guide](./docs/SELF_HOSTED_RUNNER.md))
+2. Configure 1 GitHub secret (database password)
+3. Push to main branch to deploy automatically
 
 ## Documentation
 
+- [Self-Hosted Runner Guide](./docs/SELF_HOSTED_RUNNER.md) - **Start here** for Raspberry Pi deployment
 - [Deployment Guide](./docs/DEPLOYMENT.md) - Comprehensive deployment instructions
 - [Docker Guide](./docs/DOCKER.md) - Docker-specific operations and troubleshooting
 

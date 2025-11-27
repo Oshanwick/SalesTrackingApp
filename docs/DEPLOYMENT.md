@@ -95,7 +95,35 @@ Access the application:
 
 ## Automated CI/CD Deployment
 
-### 1. Configure GitHub Secrets
+> **Recommended**: Use GitHub Actions self-hosted runner for simplified deployment. See [Self-Hosted Runner Guide](./SELF_HOSTED_RUNNER.md) for setup instructions.
+
+### Option 1: Self-Hosted Runner (Recommended)
+
+This approach runs the deployment directly on your Raspberry Pi without SSH configuration. **Docker images are built locally on your Raspberry Pi**, eliminating the need for Docker Hub.
+
+**Setup:**
+1. Install GitHub Actions runner on your Raspberry Pi (see [Self-Hosted Runner Guide](./SELF_HOSTED_RUNNER.md))
+2. Configure GitHub secret (see below)
+3. Push to main branch to deploy
+
+**Required GitHub Secrets:**
+
+| Secret Name | Description | Example |
+|-------------|-------------|---------|
+| `POSTGRES_PASSWORD` | Production database password | `your_secure_password` |
+
+**Optional Secrets** (only if you want to push images to Docker Hub):
+
+| Secret Name | Description | Example |
+|-------------|-------------|---------|
+| `DOCKER_USERNAME` | Docker Hub username | `johndoe` |
+| `DOCKER_PASSWORD` | Docker Hub password/token | `dckr_pat_xxxxx` |
+
+### Option 2: SSH-Based Deployment
+
+Alternative approach using SSH from GitHub Actions to your Raspberry Pi.
+
+**Required GitHub Secrets:**
 
 In your GitHub repository, go to Settings → Secrets and variables → Actions, and add:
 

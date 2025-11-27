@@ -112,56 +112,74 @@ jobs:
 
   deploy:
     name: Deploy to Raspberry Pi
-    runs-on: ubuntu-latest
-    needs: build-and-push
+    runs-on: self-hosted
+    needs: [test-backend, test-frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup SSH
+      - name: Create .env file if not exists
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.RASPBERRY_PI_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.RASPBERRY_PI_HOST }} >> ~/.ssh/known_hosts
+          if [ ! -f .env ]; then
+            cp .env.example .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
+          fi
       
-      - name: Copy files to Raspberry Pi
+      - name: Build Docker images locally
         run: |
-          scp -r docker-compose.yml docker-compose.prod.yml deploy.sh .env.example \
-            ${{ secrets.RASPBERRY_PI_USER }}@${{ secrets.RASPBERRY_PI_HOST }}:/opt/salestracking/
+          echo "Building backend image..."
+          docker build -t salestracking-backend:latest ./Backend
+          
+          echo "Building frontend image..."
+          docker build -t salestracking-frontend:latest ./frontend
       
-      - name: Deploy on Raspberry Pi
+      - name: Stop existing containers
         run: |
-          ssh ${{ secrets.RASPBERRY_PI_USER }}@${{ secrets.RASPBERRY_PI_HOST }} << 'EOF'
-            cd /opt/salestracking
-            
-            # Create .env if it doesn't exist
-            if [ ! -f .env ]; then
-              cp .env.example .env
-              echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-              echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env
+          docker-compose -f docker-compose.yml -f docker-compose.prod.yml down || true
+      
+      - name: Start new containers
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+      
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for backend to be healthy..."
+          RETRIES=30
+          COUNT=0
+          while [ $COUNT -lt $RETRIES ]; do
+            if curl -f http://localhost:5000/health > /dev/null 2>&1; then
+              echo "Backend is healthy!"
+              break
             fi
-            
-            # Make deploy script executable
-            chmod +x deploy.sh
-            
-            # Run deployment
-            ./deploy.sh
-          EOF
+            COUNT=$((COUNT+1))
+            echo "Waiting... ($COUNT/$RETRIES)"
+            sleep 2
+          done
+          
+          if [ $COUNT -eq $RETRIES ]; then
+            echo "Backend failed to become healthy. Rolling back..."
+            docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs backend
+            docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+            exit 1
+          fi
       
       - name: Verify deployment
         run: |
-          ssh ${{ secrets.RASPBERRY_PI_USER }}@${{ secrets.RASPBERRY_PI_HOST }} << 'EOF'
-            # Wait for services to be healthy
-            sleep 10
-            
-            # Check if containers are running
-            docker ps | grep salestracking
-            
-            # Check health endpoint
-            curl -f http://localhost:5000/health || exit 1
-            
-            echo "Deployment verified successfully!"
-          EOF
+          echo "Checking running containers..."
+          docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+          
+          echo "Testing health endpoint..."
+          curl -f http://localhost:5000/health
+          
+          echo "Testing frontend..."
+          curl -f http://localhost > /dev/null
+          
+          echo "✅ Deployment verified successfully!"
+      
+      - name: Clean up old images
+        run: |
+          echo "Cleaning up dangling images..."
+          docker image prune -f

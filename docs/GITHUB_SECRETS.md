@@ -4,9 +4,42 @@ To enable the CI/CD pipeline, configure the following secrets in your GitHub rep
 
 **Settings → Secrets and variables → Actions → New repository secret**
 
+> **Note**: If using a self-hosted runner on your Raspberry Pi, you only need 3 secrets (Docker Hub credentials + database password). See [Self-Hosted Runner Guide](./SELF_HOSTED_RUNNER.md) for details.
+
 ## Required Secrets
 
-### Docker Hub Credentials
+### For Self-Hosted Runner (Recommended)
+
+If you're using a self-hosted runner on your Raspberry Pi, you only need these 3 secrets:
+
+#### DOCKER_USERNAME
+- **Description**: Your Docker Hub username
+- **Example**: `johndoe`
+- **How to get**: Your Docker Hub account username
+
+#### DOCKER_PASSWORD
+- **Description**: Docker Hub password or access token (recommended)
+- **Example**: `dckr_pat_xxxxxxxxxxxxx`
+- **How to get**: 
+  1. Go to https://hub.docker.com/settings/security
+  2. Click "New Access Token"
+  3. Give it a name (e.g., "GitHub Actions")
+  4. Copy the token
+
+#### POSTGRES_PASSWORD
+- **Description**: Production PostgreSQL password
+- **Example**: `MySecureP@ssw0rd123!`
+- **Recommendation**: Use a strong, randomly generated password
+- **Generate random password**:
+  ```bash
+  openssl rand -base64 32
+  ```
+
+---
+
+### For SSH-Based Deployment (Alternative)
+
+If you're using SSH-based deployment instead of self-hosted runner, you need all of the above plus:
 
 #### DOCKER_USERNAME
 - **Description**: Your Docker Hub username

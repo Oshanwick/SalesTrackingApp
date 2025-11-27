@@ -12,12 +12,10 @@ services:
           memory: 256M
 
   backend:
-    image: ${DOCKER_USERNAME}/salestracking-backend:latest
+    image: salestracking-backend:latest
     build:
       context: ./Backend
       dockerfile: Dockerfile
-      platforms:
-        - linux/arm64
     environment:
       ASPNETCORE_ENVIRONMENT: Production
     deploy:
@@ -30,12 +28,10 @@ services:
           memory: 256M
 
   frontend:
-    image: ${DOCKER_USERNAME}/salestracking-frontend:latest
+    image: salestracking-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      platforms:
-        - linux/arm64
     deploy:
       resources:
         limits:
