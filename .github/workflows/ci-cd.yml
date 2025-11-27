@@ -134,11 +134,11 @@ jobs:
       
       - name: Stop existing containers
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.prod.yml down || true
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml down || true
       
       - name: Start new containers
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
       
       - name: Wait for services to be healthy
         run: |
@@ -157,15 +157,15 @@ jobs:
           
           if [ $COUNT -eq $RETRIES ]; then
             echo "Backend failed to become healthy. Rolling back..."
-            docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs backend
-            docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml logs backend
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml down
             exit 1
           fi
       
       - name: Verify deployment
         run: |
           echo "Checking running containers..."
-          docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
           
           echo "Testing health endpoint..."
           curl -f http://localhost:5000/health
