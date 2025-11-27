@@ -1,0 +1,380 @@
+import { useState, useEffect, FC } from 'react';
+import { SaleItem } from '../types/SaleItem';
+import { salesApi } from '../services/api';
+import AddSaleModal from './AddSaleModal';
+import ImportModal from './ImportModal';
+import ConfirmationModal from './ConfirmationModal';
+import toast, { Toaster } from 'react-hot-toast';
+
+const Dashboard: FC = () => {
+    const [sales, setSales] = useState<SaleItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [editingSale, setEditingSale] = useState<SaleItem | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    // Confirmation Modal State
+    const [confirmation, setConfirmation] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        isDangerous?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        isDangerous: true
+    });
+
+    // Filter State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [typeFilter, setTypeFilter] = useState('All');
+
+    useEffect(() => {
+        fetchSales();
+    }, []);
+
+    const fetchSales = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await salesApi.getAllSales();
+            setSales(data);
+        } catch (err) {
+            setError('Failed to load sales data. Make sure the backend is running on port 5000.');
+            console.error('Error fetching sales:', err);
+            toast.error('Failed to load sales data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddSale = async (sale: SaleItem) => {
+        try {
+            if (editingSale && editingSale.id) {
+                // Update existing sale
+                await salesApi.updateSale(editingSale.id, { ...sale, id: editingSale.id });
+                setSales(sales.map(s => s.id === editingSale.id ? { ...sale, id: editingSale.id } : s));
+                toast.success('Sale updated successfully');
+            } else {
+                // Add new sale
+                const newSale = await salesApi.addSale(sale);
+                setSales([newSale, ...sales]);
+                toast.success('Sale added successfully');
+            }
+            setEditingSale(null);
+        } catch (err) {
+            toast.error('Failed to save sale. Please try again.');
+            console.error('Error saving sale:', err);
+        }
+    };
+
+    const handleEditClick = (sale: SaleItem) => {
+        setEditingSale(sale);
+        setIsModalOpen(true);
+    };
+
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setEditingSale(null);
+    };
+
+    const confirmDeleteSale = (id: number) => {
+        setConfirmation({
+            isOpen: true,
+            title: 'Delete Sale',
+            message: 'Are you sure you want to delete this sale? This action cannot be undone.',
+            onConfirm: () => handleDeleteSale(id),
+            isDangerous: true
+        });
+    };
+
+    const handleDeleteSale = async (id: number) => {
+        try {
+            await salesApi.deleteSale(id);
+            setSales(sales.filter(sale => sale.id !== id));
+            toast.success('Sale deleted successfully');
+        } catch (err) {
+            toast.error('Failed to delete sale. Please try again.');
+            console.error('Error deleting sale:', err);
+        }
+    };
+
+    const confirmDeleteAll = () => {
+        setConfirmation({
+            isOpen: true,
+            title: 'Clear All Data',
+            message: 'Are you sure you want to delete ALL sales data? This action cannot be undone.',
+            onConfirm: handleDeleteAllSales,
+            isDangerous: true
+        });
+    };
+
+    const handleDeleteAllSales = async () => {
+        try {
+            await salesApi.deleteAllSales();
+            setSales([]);
+            toast.success('All sales deleted successfully');
+        } catch (err) {
+            toast.error('Failed to delete all sales. Please try again.');
+            console.error('Error deleting all sales:', err);
+        }
+    };
+
+    // Filtering Logic
+    const filteredSales = sales.filter(sale => {
+        const matchesSearch =
+            sale.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            sale.assetName.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesType = typeFilter === 'All' || sale.type === typeFilter;
+
+        return matchesSearch && matchesType;
+    });
+
+    const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.price, 0);
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    };
+
+    return (
+        <div className="min-h-screen p-8">
+            <Toaster position="top-right" />
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 via-primary-500 to-primary-400 bg-clip-text text-transparent mb-2">
+                        Sales Tracking Dashboard
+                    </h1>
+                    <p className="text-slate-600 text-lg">Manage and track all your Envato sales in one place</p>
+                </div>
+
+                {/* Stats Card */}
+                <div className="mb-8">
+                    <div className="stat-card">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-slate-600 text-sm font-semibold uppercase tracking-wide mb-1">
+                                    Total Revenue
+                                </p>
+                                <p className="text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
+                                    ${totalRevenue.toFixed(2)}
+                                </p>
+                            </div>
+                            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-2xl shadow-lg">
+                                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-center gap-2">
+                            <span className="text-sm text-slate-600">
+                                {filteredSales.length} {filteredSales.length === 1 ? 'sale' : 'sales'} found
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filters and Actions */}
+                <div className="mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    {/* Search and Filter */}
+                    <div className="flex gap-4 w-full md:w-auto">
+                        <div className="relative flex-1 md:w-64">
+                            <input
+                                type="text"
+                                placeholder="Search sales..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="input-field pl-10"
+                            />
+                            <svg className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <select
+                            value={typeFilter}
+                            onChange={(e) => setTypeFilter(e.target.value)}
+                            className="input-field w-auto"
+                        >
+                            <option value="All">All Types</option>
+                            <option value="Wordpress">Wordpress</option>
+                            <option value="Web Template">Web Template</option>
+                            <option value="Plugin">Plugin</option>
+                            <option value="Theme">Theme</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-4 w-full md:w-auto justify-end">
+                        <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="btn-primary">
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add New Sale
+                            </span>
+                        </button>
+                        <button onClick={() => setIsImportModalOpen(true)} className="btn-secondary">
+                            <span className="flex items-center gap-2">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                Import CSV
+                            </span>
+                        </button>
+                        {sales.length > 0 && (
+                            <button
+                                onClick={confirmDeleteAll}
+                                className="px-6 py-3 bg-red-50 text-red-600 rounded-xl font-semibold shadow-sm hover:bg-red-100 hover:shadow transition-all duration-200 border border-red-200"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Clear All
+                                </span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg animate-fade-in">
+                        <div className="flex items-center">
+                            <svg className="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-red-700 font-medium">{error}</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Sales Table */}
+                <div className="glass-card rounded-2xl overflow-hidden">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                        </div>
+                    ) : filteredSales.length === 0 ? (
+                        <div className="text-center py-20">
+                            <svg className="w-20 h-20 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <p className="text-slate-500 text-lg font-medium">No sales found</p>
+                            <p className="text-slate-400 mt-2">Try adjusting your search or filters</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr>
+                                        <th className="table-header rounded-tl-2xl">Date</th>
+                                        <th className="table-header">Name</th>
+                                        <th className="table-header">Type</th>
+                                        <th className="table-header">Asset</th>
+                                        <th className="table-header">Link</th>
+                                        <th className="table-header">Price</th>
+                                        <th className="table-header rounded-tr-2xl">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white">
+                                    {filteredSales.map((sale) => (
+                                        <tr
+                                            key={sale.id}
+                                            className="hover:bg-slate-50 transition-colors duration-100"
+                                        >
+                                            <td className="table-cell font-medium">{formatDate(sale.date)}</td>
+                                            <td className="table-cell">{sale.customerName}</td>
+                                            <td className="table-cell">
+                                                <span className="inline-block px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-xs font-semibold">
+                                                    {sale.type}
+                                                </span>
+                                            </td>
+                                            <td className="table-cell">{sale.assetName}</td>
+                                            <td className="table-cell">
+                                                {sale.envatoLink ? (
+                                                    <a
+                                                        href={sale.envatoLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-primary-600 hover:text-primary-700 hover:underline inline-flex items-center gap-1"
+                                                    >
+                                                        View
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-slate-400">-</span>
+                                                )}
+                                            </td>
+                                            <td className="table-cell font-bold text-green-600">
+                                                ${sale.price.toFixed(2)}
+                                            </td>
+                                            <td className="table-cell">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleEditClick(sale)}
+                                                        className="text-blue-500 hover:text-blue-700 transition-colors duration-100 p-2 hover:bg-blue-50 rounded-lg"
+                                                        title="Edit sale"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => sale.id && confirmDeleteSale(sale.id)}
+                                                        className="text-red-500 hover:text-red-700 transition-colors duration-100 p-2 hover:bg-red-50 rounded-lg"
+                                                        title="Delete sale"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Add Sale Modal */}
+            <AddSaleModal
+                isOpen={isModalOpen}
+                onClose={handleModalClose}
+                onAdd={handleAddSale}
+                initialData={editingSale}
+            />
+
+            {/* Import Modal */}
+            <ImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onImportComplete={fetchSales}
+            />
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                onClose={() => setConfirmation({ ...confirmation, isOpen: false })}
+                onConfirm={confirmation.onConfirm}
+                title={confirmation.title}
+                message={confirmation.message}
+                isDangerous={confirmation.isDangerous}
+            />
+        </div>
+    );
+};
+
+export default Dashboard;

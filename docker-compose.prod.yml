@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  backend:
+    image: ${DOCKER_USERNAME}/salestracking-backend:latest
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  frontend:
+    image: ${DOCKER_USERNAME}/salestracking-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      platforms:
+        - linux/arm64
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M

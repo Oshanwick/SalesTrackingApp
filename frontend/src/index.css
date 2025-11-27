@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen font-sans;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-xl;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-500 text-white px-6 py-2.5 rounded-lg font-medium shadow-lg hover:shadow-xl hover:from-primary-700 hover:to-primary-600 transition-all duration-200;
+    will-change: transform, box-shadow;
+    transform: translateZ(0);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px) translateZ(0);
+  }
+
+  .btn-secondary {
+    @apply bg-white text-slate-700 px-6 py-2.5 rounded-lg font-medium border border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all duration-150;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition-all duration-150;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .btn-danger:hover {
+    transform: scale3d(1.03, 1.03, 1) translateZ(0);
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-150;
+  }
+
+  .table-header {
+    @apply bg-gradient-to-r from-slate-700 to-slate-600 text-white font-semibold py-3 px-4 text-left text-sm uppercase tracking-wider;
+  }
+
+  .table-cell {
+    @apply py-3 px-4 border-b border-slate-200 text-sm text-slate-700;
+  }
+
+  .stat-card {
+    @apply glass-card rounded-2xl p-6 transition-all duration-200 hover:shadow-2xl;
+    will-change: transform, box-shadow;
+    transform: translateZ(0);
+  }
+
+  .stat-card:hover {
+    transform: scale3d(1.02, 1.02, 1) translateZ(0);
+  }
+}
+
+/* React DatePicker Custom Styles */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker {
+  @apply border-2 border-primary-200 rounded-lg shadow-xl;
+}
+
+.react-datepicker__header {
+  @apply bg-gradient-to-r from-primary-600 to-primary-500 border-b-0 rounded-t-lg;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+  @apply text-white;
+}
+
+.react-datepicker__day--selected {
+  @apply bg-primary-600 text-white rounded-lg;
+}
+
+.react-datepicker__day:hover {
+  @apply bg-primary-100 rounded-lg;
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) translateZ(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+  will-change: opacity, transform;
+}
+
+/* Modal animations */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.95) translateZ(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) translateZ(0);
+  }
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/60 z-40;
+  backdrop-filter: blur(2px);
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  @apply fixed top-1/2 left-1/2 z-50;
+  transform: translate(-50%, -50%) translateZ(0);
+  will-change: transform, opacity;
+  animation: modalSlideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
