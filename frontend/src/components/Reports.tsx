@@ -144,15 +144,18 @@ const Reports: FC = () => {
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                                 <Pie
-                                    data={salesByType}
+                                    data={salesByType as any[]}
                                     dataKey="revenue"
                                     nameKey="type"
                                     cx="50%"
                                     cy="50%"
                                     outerRadius={100}
-                                    label={(entry) => `${entry.type}: ${entry.percentage.toFixed(1)}%`}
+                                    label={(props: any) => {
+                                        const entry = props as SalesByType;
+                                        return `${entry.type}: ${entry.percentage.toFixed(1)}%`;
+                                    }}
                                 >
-                                    {salesByType.map((entry, index) => (
+                                    {salesByType.map((_entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
